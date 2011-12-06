@@ -23,18 +23,17 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.logging.Logger;
 
 import org.fusesource.restygwt.rebind.AnnotationResolver;
 
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.JavaScriptObject;
+import com.google.gwt.core.client.JsonUtils;
 import com.google.gwt.http.client.Request;
 import com.google.gwt.http.client.RequestBuilder;
 import com.google.gwt.http.client.RequestCallback;
 import com.google.gwt.http.client.RequestException;
 import com.google.gwt.http.client.Response;
-import com.google.gwt.json.client.JSONException;
 import com.google.gwt.json.client.JSONParser;
 import com.google.gwt.json.client.JSONValue;
 import com.google.gwt.xml.client.Document;
@@ -246,23 +245,12 @@ public class Method {
     }
 
     public <T extends JavaScriptObject> void send(final OverlayCallback<T> callback) {
-
-
         defaultAcceptType(Resource.CONTENT_TYPE_JSON);
         try {
             send(new AbstractRequestCallback<T>(this, callback) {
                 protected T parseResult() throws Exception {
                     try {
-                        JSONValue val = JSONParser.parseStrict(response.getText());
-                        if (val.isObject() != null) {
-                            return (T) val.isObject().getJavaScriptObject();
-                        } else if (val.isArray() != null) {
-                            return (T) val.isArray().getJavaScriptObject();
-                        } else {
-                            throw new ResponseFormatException("Response was NOT a JSON object");
-                        }
-                    } catch (JSONException e) {
-                        throw new ResponseFormatException("Response was NOT a valid JSON document", e);
+                        return JsonUtils.safeEval(response.getText());
                     } catch (IllegalArgumentException e) {
                         throw new ResponseFormatException("Response was NOT a valid JSON document", e);
                     }
